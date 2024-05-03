@@ -44,4 +44,7 @@
       </padding>
    </HBox>
    <JFXListView fx:id="movieListView" stylesheets="@styles.css" VBox.vgrow="ALWAYS" />
+
+   <!-- Button to switch to Watchlist screen -->
+   <JFXButton fx:id="watchlistBtn" onAction="#switchToWatchlist" styleClass="background-yellow" stylesheets="@styles.css" text="Watchlist" />
 </VBox>

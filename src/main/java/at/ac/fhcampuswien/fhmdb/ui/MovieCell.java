@@ -1,14 +1,18 @@
 package at.ac.fhcampuswien.fhmdb.ui;
 
+import at.ac.fhcampuswien.fhmdb.database.WatchlistRepository;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import com.jfoenix.controls.JFXButton;
+import javafx.scene.control.ListCell;
+import javafx.scene.layout.VBox;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.geometry.Pos;
+
 
 import java.util.stream.Collectors;
 
@@ -17,27 +21,29 @@ public class MovieCell extends ListCell<Movie> {
     private final Label detail = new Label();
     private final Label genre = new Label();
     private final JFXButton detailBtn = new JFXButton("Show Details");
-    private final VBox layout = new VBox(title, detail, genre, detailBtn);
+    private final JFXButton addToWatchlistBtn = new JFXButton("Add to Watchlist"); // Added button
+    private final VBox layout = new VBox(title, detail, genre, detailBtn, addToWatchlistBtn); // Added button to layout
     private boolean collapsedDetails = true;
 
     public MovieCell() {
         super();
-        // color scheme
+
+        // Set styles and layout
         detailBtn.setStyle("-fx-background-color: #f5c518;");
+        addToWatchlistBtn.setStyle("-fx-background-color: #f5c518;"); // Added button style
         title.getStyleClass().add("text-yellow");
         detail.getStyleClass().add("text-white");
         genre.getStyleClass().add("text-white");
         genre.setStyle("-fx-font-style: italic");
         layout.setBackground(new Background(new BackgroundFill(Color.web("#454545"), null, null)));
-
-        // layout
-        title.fontProperty().set(title.getFont().font(20));
+        title.setFont(Font.font(20));
         detail.setWrapText(true);
         layout.setPadding(new Insets(10));
-        layout.spacingProperty().set(10);
-        layout.alignmentProperty().set(javafx.geometry.Pos.CENTER_LEFT);
+        layout.setSpacing(10);
+        layout.setAlignment(Pos.CENTER_LEFT);
 
-        detailBtn.setOnMouseClicked(mouseEvent -> {
+        // Set action for "Show Details" button
+        detailBtn.setOnAction(event -> {
             if (collapsedDetails) {
                 layout.getChildren().add(getDetails());
                 collapsedDetails = false;
@@ -49,6 +55,21 @@ public class MovieCell extends ListCell<Movie> {
             }
             setGraphic(layout);
         });
+
+        // Set action for "Add to Watchlist" button
+        addToWatchlistBtn.setOnAction(event -> {
+            Movie movie = getItem();
+            if (movie != null) {
+                addToWatchlist(movie);
+            }
+        });
+    }
+
+    private void addToWatchlist(Movie movie) {
+        WatchlistRepository.getInstance().addToWatchlist(movie); // Adjusted method call
+        // Provide visual feedback to the user
+        addToWatchlistBtn.setText("Added");
+        addToWatchlistBtn.setDisable(true); // Disable the button after adding the movie
     }
 
     private VBox getDetails() {
@@ -76,6 +97,7 @@ public class MovieCell extends ListCell<Movie> {
         details.getChildren().add(mainCast);
         return details;
     }
+
     @Override
     protected void updateItem(Movie movie, boolean empty) {
         super.updateItem(movie, empty);
@@ -104,4 +126,3 @@ public class MovieCell extends ListCell<Movie> {
         }
     }
 }
-
