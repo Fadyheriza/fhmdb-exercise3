@@ -68,8 +68,7 @@ public class HomeController implements Initializable {
 
     private final ClickEventHandler<Movie> onRemoveFromWatchlistClicked = movie -> {
         if (movie != null) {
-            try {
-                watchlistRepository.removeFromWatchlist();
+            try { ;
             } catch (Exception e) {
                 e.printStackTrace();  // Log or handle the exception appropriately
             }
