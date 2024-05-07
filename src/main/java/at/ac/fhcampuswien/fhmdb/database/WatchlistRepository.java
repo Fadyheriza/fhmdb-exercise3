@@ -1,57 +1,31 @@
 package at.ac.fhcampuswien.fhmdb.database;
-
-import at.ac.fhcampuswien.fhmdb.ui.MovieCell;
 import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.dao.DaoManager;
 import java.sql.SQLException;
 import java.util.List;
+import com.j256.ormlite.support.ConnectionSource;
 
 public class WatchlistRepository {
+    private final Dao<WatchlistMovieEntity, Long> dao;
 
-    private Dao<WatchlistMovieEntity, Integer> watchlistDao;
-
-    public WatchlistRepository(Dao<WatchlistMovieEntity, Integer> watchlistDao) {
-        this.watchlistDao = watchlistDao;
+    public WatchlistRepository(ConnectionSource connectionSource) throws SQLException {
+        dao = DaoManager.createDao(connectionSource, WatchlistMovieEntity.class);
     }
 
-    public static MovieCell getInstance() {
-        return new MovieCell();
+    public List<WatchlistMovieEntity> getWatchlist() throws SQLException {
+        return dao.queryForAll();
     }
 
-    // Method to add a movie to the watchlist
-    public void addToWatchlist(WatchlistMovieEntity watchlistMovie) {
-        try {
-            watchlistDao.create(watchlistMovie);
-        } catch (SQLException e) {
-            System.err.println("Error adding movie to watchlist: " + e.getMessage());
+    public int addToWatchlist(WatchlistMovieEntity movie) throws SQLException {
+        List<WatchlistMovieEntity> existing = dao.queryForEq("apiId", movie.getApiId());
+        if (existing.isEmpty()) {
+            return dao.create(movie);
         }
+        return 0; // Or return existing.get(0).getId() if you want to return the ID of the existing entry.
     }
 
-    // Method to remove a movie from the watchlist
-    public void removeFromWatchlist(WatchlistMovieEntity watchlistMovie) {
-        try {
-            watchlistDao.delete(watchlistMovie);
-        } catch (SQLException e) {
-            System.err.println("Error removing movie from watchlist: " + e.getMessage());
-        }
-    }
-
-    // Method to find a watchlist entry by its ID
-    public WatchlistMovieEntity findById(int id) {
-        try {
-            return watchlistDao.queryForId(id);
-        } catch (SQLException e) {
-            System.err.println("Error finding watchlist entry: " + e.getMessage());
-            return null;
-        }
-    }
-
-    // Method to retrieve all entries from the watchlist
-    public List<WatchlistMovieEntity> findAllEntries() {
-        try {
-            return watchlistDao.queryForAll();
-        } catch (SQLException e) {
-            System.err.println("Error retrieving all watchlist entries: " + e.getMessage());
-            return null;
-        }
+    public int removeFromWatchlist(String apiId) throws SQLException {
+        List<WatchlistMovieEntity> movies = dao.queryForEq("apiId", apiId);
+        return dao.delete(movies);
     }
 }

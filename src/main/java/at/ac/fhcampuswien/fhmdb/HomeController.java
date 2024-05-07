@@ -1,10 +1,14 @@
 package at.ac.fhcampuswien.fhmdb;
-
+import at.ac.fhcampuswien.fhmdb.database.DatabaseManager;
 import at.ac.fhcampuswien.fhmdb.api.MovieAPI;
+import at.ac.fhcampuswien.fhmdb.database.WatchlistMovieEntity;
+import at.ac.fhcampuswien.fhmdb.database.WatchlistRepository;
+import at.ac.fhcampuswien.fhmdb.ui.MovieCell.ClickEventHandler;
 import at.ac.fhcampuswien.fhmdb.models.Genre;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import at.ac.fhcampuswien.fhmdb.models.SortedState;
 import at.ac.fhcampuswien.fhmdb.ui.MovieCell;
+import com.j256.ormlite.support.ConnectionSource;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXListView;
@@ -20,6 +24,7 @@ import javafx.scene.control.TextField;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -43,12 +48,44 @@ public class HomeController implements Initializable {
 
     private List<Movie> allMovies;
     private ObservableList<Movie> observableMovies = FXCollections.observableArrayList();
+    private WatchlistRepository watchlistRepository;
     private SortedState sortedState;
+    // Lambda expressions for handling add and remove from watchlist
+    private ConnectionSource getDatabaseConnection() throws SQLException {
+        return DatabaseManager.getConnection();
+    }
+
+    private final ClickEventHandler<Movie> onAddToWatchlistClicked = movie -> {
+        if (movie != null) {
+            try {
+                // Assuming WatchlistRepository and WatchlistMovieEntity have appropriate methods
+                watchlistRepository.addToWatchlist(new WatchlistMovieEntity());
+            } catch (Exception e) {
+                e.printStackTrace();  // Log or handle the exception appropriately
+            }
+        }
+    };
+
+    private final ClickEventHandler<Movie> onRemoveFromWatchlistClicked = movie -> {
+        if (movie != null) {
+            try {
+                watchlistRepository.removeFromWatchlist();
+            } catch (Exception e) {
+                e.printStackTrace();  // Log or handle the exception appropriately
+            }
+        }
+    };
 
     @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-        initializeState();
-        initializeLayout();
+    public void initialize(URL location, ResourceBundle resources) {
+        try {
+            ConnectionSource connectionSource = getDatabaseConnection();  // This method needs to be defined to return a valid ConnectionSource
+            watchlistRepository = new WatchlistRepository(connectionSource);
+            initializeState();
+            initializeLayout();
+        } catch (SQLException e) {
+            e.printStackTrace();  // Better error handling/logging might be needed here
+        }
     }
 
 
@@ -61,7 +98,7 @@ public class HomeController implements Initializable {
 
     public void initializeLayout() {
         movieListView.setItems(observableMovies);
-        movieListView.setCellFactory(movieListView -> new MovieCell());
+        movieListView.setCellFactory(movieListView -> new MovieCell(onAddToWatchlistClicked, onRemoveFromWatchlistClicked));
 
         genreComboBox.getItems().add("No filter");
         genreComboBox.getItems().addAll(Arrays.stream(Genre.values()).map(Enum::name).collect(Collectors.toList()));

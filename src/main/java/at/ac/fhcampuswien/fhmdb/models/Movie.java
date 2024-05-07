@@ -17,15 +17,8 @@ public class Movie {
     private final List<String> writers = new ArrayList<>();
     private final List<String> mainCast = new ArrayList<>();
     private double rating; // 0-10
-    private boolean inWatchlist;
 
-    public boolean isInWatchlist() {
-        return inWatchlist;
-    }
 
-    public void setInWatchlist(boolean inWatchlist) {
-        this.inWatchlist = inWatchlist;
-    }
     @Override
     public String toString() {
         return this.title;

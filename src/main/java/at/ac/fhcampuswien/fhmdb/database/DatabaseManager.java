@@ -1,59 +1,54 @@
 package at.ac.fhcampuswien.fhmdb.database;
-
+import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import com.j256.ormlite.support.ConnectionSource;
+import com.j256.ormlite.table.TableUtils;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
-import com.j256.ormlite.support.ConnectionSource;
-import com.j256.ormlite.jdbc.JdbcConnectionSource;
-import com.j256.ormlite.table.TableUtils;
-
-import java.io.IOException;
 import java.sql.SQLException;
 
-
 public class DatabaseManager {
-    // This JDBC URL specifies an in-memory H2 database named `fhmdb`
-    private static final String DATABASE_URL = "jdbc:h2:mem:fhmdb;DB_CLOSE_DELAY=-1"; // Keep the database in memory until the VM exits
+    private static final String DATABASE_URL = "jdbc:sqlite:your_database.db";
+    private String DB_URL;
+    private String username;
+    private String password;
 
-    private ConnectionSource connectionSource;
+    private ConnectionSource conn;
+    private Dao<MovieEntity, Long> movieDao;
+    private Dao<WatchlistMovieEntity, Long> watchlistDao;
 
-    public DatabaseManager() {
-        try {
-            // Establish the connection to the database
-            connectionSource = new JdbcConnectionSource(DATABASE_URL);
+    public DatabaseManager(String DB_URL, String username, String password) {
 
-            // Create tables if they do not exist
-            TableUtils.createTableIfNotExists(connectionSource, MovieEntity.class);
-            TableUtils.createTableIfNotExists(connectionSource, WatchlistMovieEntity.class);
-        } catch (SQLException e) {
-            System.err.println("Unable to create database connection or tables: " + e.getMessage());
-            throw new RuntimeException(e);
+        this.DB_URL = DB_URL;
+        this.username = username;
+        this.password = password;
+    }
+
+    public void createConnectionSource() throws SQLException {
+        conn = new JdbcConnectionSource(DB_URL, username, password);
+    }
+    public static ConnectionSource getConnection() throws SQLException {
+        return new JdbcConnectionSource(DATABASE_URL);
+    }
+    public ConnectionSource getConnectionSource() {
+        return conn;
+    }
+
+    public void createTables() throws SQLException {
+        TableUtils.createTableIfNotExists(conn, MovieEntity.class);
+        TableUtils.createTableIfNotExists(conn, WatchlistMovieEntity.class);
+    }
+
+    public Dao<MovieEntity, Long> getMovieDao() throws SQLException {
+        if (movieDao == null) {
+            movieDao = DaoManager.createDao(conn, MovieEntity.class);
         }
+        return movieDao;
     }
 
-    // Get DAO for MovieEntity
-    public Dao<MovieEntity, Integer> getMovieDao() throws SQLException {
-        return DaoManager.createDao(connectionSource, MovieEntity.class);
-    }
-
-    // Get DAO for WatchlistMovieEntity
-    public Dao<WatchlistMovieEntity, Integer> getWatchlistDao() throws SQLException {
-        return DaoManager.createDao(connectionSource, WatchlistMovieEntity.class);
-    }
-
-    public void closeConnection() {
-        if (connectionSource != null) {
-            try {
-                connectionSource.close();
-            } catch (IOException e) {
-                System.err.println("Failed to close the database connection due to an IO error: " + e.getMessage());
-            }
+    public Dao<WatchlistMovieEntity, Long> getWatchlistDao() throws SQLException {
+        if (watchlistDao == null) {
+            watchlistDao = DaoManager.createDao(conn, WatchlistMovieEntity.class);
         }
-    }
-
-
-    @Override
-    protected void finalize() throws Throwable {
-        closeConnection(); // Ensure the connection is closed when the object is garbage collected
-        super.finalize();
+        return watchlistDao;
     }
 }
