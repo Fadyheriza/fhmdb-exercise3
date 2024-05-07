@@ -266,21 +266,31 @@ public class HomeController implements Initializable {
     }
 
     public void searchBtnClicked(ActionEvent actionEvent) {
-        String searchQuery = searchField.getText().trim().toLowerCase();
+        // Safely retrieve the text from searchField, handling potential null values
+        String searchText = searchField.getText();
+        String searchQuery = (searchText == null ? "" : searchText.trim().toLowerCase());
+
+        // Validate combobox values safely
         String releaseYear = validateComboboxValue(releaseYearComboBox.getSelectionModel().getSelectedItem());
         String ratingFrom = validateComboboxValue(ratingFromComboBox.getSelectionModel().getSelectedItem());
         String genreValue = validateComboboxValue(genreComboBox.getSelectionModel().getSelectedItem());
 
+        // Convert the genre string back to the enum safely
         Genre genre = null;
-        if(genreValue != null) {
-            genre = Genre.valueOf(genreValue);
+        if (genreValue != null) {
+            try {
+                genre = Genre.valueOf(genreValue);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid genre specified: " + genreValue);
+            }
         }
 
-        //List<Movie> movies = getMovies(searchQuery, genre, releaseYear, ratingFrom);
+        // Apply all filters and update the movie list
         List<Movie> movies = applyAllFilters(searchQuery, genre, releaseYear, ratingFrom);
         setMovies(movies);
         setMovieList(movies);
 
+        // Sort movies according to the current sorted state
         sortMovies(sortedState);
     }
 
@@ -326,9 +336,9 @@ public class HomeController implements Initializable {
 
     public void unFilterBtnClicked(ActionEvent actionEvent) throws SQLException {
         searchField.setText(null);
-        genreComboBox.setValue(null);
-        releaseYearComboBox.setValue(null);
-        ratingFromComboBox.setValue(null);
+        genreComboBox.setValue("No filter");
+        releaseYearComboBox.setValue("No filter");
+        ratingFromComboBox.setValue("No filter");
         List<Movie> result;
         if(windowState == WindowState.HOME) {
             try {
@@ -383,8 +393,6 @@ public class HomeController implements Initializable {
                 .filter(movie -> movie.getReleaseYear() >= startYear && movie.getReleaseYear() <= endYear)
                 .collect(Collectors.toList());
     }
-
-
 
     private void showDatabaseError(DatabaseException e) {
         Text text = new Text("Could not reach Database!!!" + System.lineSeparator() +
