@@ -1,7 +1,8 @@
 package at.ac.fhcampuswien.fhmdb.models;
 
+import at.ac.fhcampuswien.fhmdb.database.MovieEntity;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,10 +19,9 @@ public class Movie {
     private final List<String> mainCast = new ArrayList<>();
     private double rating; // 0-10
 
-
     @Override
     public String toString() {
-        return this.title;
+        return this.id;
     }
 
     public Movie(String title, String description, List<Genre> genres) {
@@ -49,6 +49,17 @@ public class Movie {
         this.rating = rating;
     }
 
+    public Movie(MovieEntity movieEntity){
+        this.id=movieEntity.getId();
+        this.title=movieEntity.getTitle();
+        this.description=movieEntity.getDescription();
+        this.genres=stringToGenres(movieEntity.getGenres());
+        this.releaseYear=movieEntity.getReleaseYear();
+        this.imgUrl=movieEntity.getImgUrl();
+        this.lengthInMinutes=movieEntity.getLengthInMinutes();
+        this.rating=movieEntity.getRating();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if(obj == null) {
@@ -61,6 +72,10 @@ public class Movie {
             return false;
         }
         return this.title.equals(other.title) && this.description.equals(other.description) && this.genres.equals(other.genres);
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getTitle() {
@@ -103,55 +118,16 @@ public class Movie {
         return rating;
     }
 
-    public static List<Movie> initializeMovies(){
-        List<Movie> movies = new ArrayList<>();
-        movies.add(new Movie(
-                null,
-                "Life Is Beautiful",
-                "When an open-minded Jewish librarian and his son become victims of the Holocaust, he uses a perfect mixture of will, humor, and imagination to protect his son from the dangers around their camp." ,
-                Arrays.asList(Genre.DRAMA, Genre.ROMANCE),
-                1997,
-                "https://upload.wikimedia.org/wikipedia/en/7/7c/Life_is_Beautiful.jpg",
-                116,
-                8.6));
-        movies.add(new Movie(
-                null,
-                "The Usual Suspects",
-                "A sole survivor tells of the twisty events leading up to a horrific gun battle on a boat, which begin when five criminals meet at a seemingly random police lineup.",
-                Arrays.asList(Genre.CRIME, Genre.DRAMA, Genre.MYSTERY),
-                1995,
-                "https://upload.wikimedia.org/wikipedia/en/9/9c/Usual_suspects_ver1.jpg",
-                106,
-                8.6));
-        movies.add(new Movie(
-                null,
-                "Puss in Boots",
-                "An outlaw cat, his childhood egg-friend, and a seductive thief kitty set out in search for the eggs of the fabled Golden Goose to clear his name, restore his lost honor, and regain the trust of his mother and town.",
-                Arrays.asList(Genre.COMEDY, Genre.FAMILY, Genre.ANIMATION),
-                2011,
-                "",
-                90,
-                6.6
-                ));
-        movies.add(new Movie(
-                null,
-                "Avatar",
-                "A paraplegic Marine dispatched to the moon Pandora on a unique mission becomes torn between following his orders and protecting the world he feels is his home.",
-                Arrays.asList(Genre.ANIMATION, Genre.DRAMA, Genre.ACTION),
-                2009,
-                "",
-                162,
-                7.8));
-        movies.add(new Movie(
-                null,
-                "The Wolf of Wall Street",
-                "Based on the true story of Jordan Belfort, from his rise to a wealthy stock-broker living the high life to his fall involving crime, corruption and the federal government.",
-                Arrays.asList(Genre.DRAMA, Genre.ROMANCE, Genre.BIOGRAPHY),
-                2013,
-                "",
-                180,
-                8.2));
-
-        return movies;
+    private List<Genre> stringToGenres(String string){
+        List<String> list = List.of(string.substring(1,string.length()-1).split(", "));
+        List<Genre> genres = new ArrayList<>();
+        for(String s : list) genres.add(Genre.valueOf(s));
+        return genres;
     }
+
+    public MovieEntity toMovieEntity(){
+        return new MovieEntity(this);
+    }
+
+
 }

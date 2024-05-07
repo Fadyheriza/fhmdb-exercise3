@@ -1,17 +1,20 @@
 package at.ac.fhcampuswien.fhmdb.ui;
 
+import at.ac.fhcampuswien.fhmdb.ClickEventHandler;
+import at.ac.fhcampuswien.fhmdb.HomeController;
 import at.ac.fhcampuswien.fhmdb.models.Movie;
 import com.jfoenix.controls.JFXButton;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
-import javafx.scene.layout.VBox;
-import javafx.scene.layout.HBox;
-import javafx.geometry.Insets;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.geometry.Pos;
+
+import java.sql.SQLException;
 import java.util.stream.Collectors;
 
 public class MovieCell extends ListCell<Movie> {
@@ -19,73 +22,66 @@ public class MovieCell extends ListCell<Movie> {
     private final Label detail = new Label();
     private final Label genre = new Label();
     private final JFXButton detailBtn = new JFXButton("Show Details");
-    private final JFXButton addToWatchlistBtn = new JFXButton("Add to Watchlist");
-    private final JFXButton removeFromWatchlistBtn = new JFXButton("Remove from Watchlist");
-    private final VBox layout = new VBox();
-    private final HBox buttons = new HBox();
-    private final VBox detailsBox = new VBox();
-    private boolean detailsVisible = false;
+    public final JFXButton watchlistBtn = new JFXButton("Watchlist");
+    private final HBox buttons = new HBox(detailBtn, watchlistBtn);
+    private final VBox layout = new VBox(title, detail, genre, buttons);
+    private boolean collapsedDetails = true;
 
-    @FunctionalInterface
-    public interface ClickEventHandler<T> {
-        void onClick(T t);
-    }
 
-    public MovieCell(ClickEventHandler<Movie> addToWatchlistClicked, ClickEventHandler<Movie> removeFromWatchlistClicked) {
+    public MovieCell(ClickEventHandler addToWatchlist, HomeController homeController) {
         super();
-        configureButtons(addToWatchlistClicked, removeFromWatchlistClicked);
-        setupLayout();
-        setupButtonActions();
-    }
-
-    private void configureButtons(ClickEventHandler<Movie> addToWatchlistClicked, ClickEventHandler<Movie> removeFromWatchlistClicked) {
-        addToWatchlistBtn.setStyle("-fx-background-color: #76ff03;");  // Green button
-        removeFromWatchlistBtn.setStyle("-fx-background-color: #ff1744;");  // Red button
-        detailBtn.setStyle("-fx-background-color: #f5c518;");  // Yellow button
-
-        addToWatchlistBtn.setOnAction(event -> addToWatchlistClicked.onClick(getItem()));
-        removeFromWatchlistBtn.setOnAction(event -> removeFromWatchlistClicked.onClick(getItem()));
-    }
-
-    private void setupLayout() {
+        // color scheme
+        detailBtn.setStyle("-fx-background-color: #f5c518;");
         title.getStyleClass().add("text-yellow");
         detail.getStyleClass().add("text-white");
         genre.getStyleClass().add("text-white");
         genre.setStyle("-fx-font-style: italic");
-        title.setFont(Font.font(20));
-        detail.setWrapText(true);
-
-        buttons.getChildren().addAll(detailBtn, addToWatchlistBtn, removeFromWatchlistBtn);
-        buttons.setSpacing(10);
-        buttons.setAlignment(Pos.CENTER_LEFT);
-
-        layout.getChildren().addAll(title, detail, genre, buttons, detailsBox);
-        layout.setSpacing(10);
-        layout.setPadding(new Insets(10));
-        layout.setAlignment(Pos.CENTER_LEFT);
         layout.setBackground(new Background(new BackgroundFill(Color.web("#454545"), null, null)));
-    }
+        watchlistBtn.setStyle("-fx-background-color: #f5c518;");
 
-    private void setupButtonActions() {
-        detailBtn.setOnAction(event -> toggleDetails());
-    }
+        // layout
+        //detailBtn.setAlignment(Pos.TOP_RIGHT);
+        title.fontProperty().set(title.getFont().font(20));
+        detail.setWrapText(true);
+        layout.setPadding(new Insets(10));
+        layout.spacingProperty().set(10);
+        layout.alignmentProperty().set(Pos.CENTER_LEFT);
+        buttons.setPadding(new Insets(10));
+        buttons.spacingProperty().set(10);
+        buttons.setAlignment(Pos.TOP_RIGHT);
+        if(homeController.windowState == HomeController.WindowState.WATCHLIST) watchlistBtn.setText("Remove");
 
-    private void toggleDetails() {
-        if (!detailsVisible) {
-            detailsBox.getChildren().setAll(getDetails());
-            detailsVisible = true;
-            detailBtn.setText("Hide Details");
-        } else {
-            detailsBox.getChildren().clear();
-            detailsVisible = false;
-            detailBtn.setText("Show Details");
-        }
+
+        detailBtn.setOnMouseClicked(mouseEvent -> {
+            if (collapsedDetails) {
+                layout.getChildren().add(getDetails());
+                collapsedDetails = false;
+                detailBtn.setText("Hide Details");
+            } else {
+                layout.getChildren().remove(4);
+                collapsedDetails = true;
+                detailBtn.setText("Show Details");
+            }
+            setGraphic(layout);
+        });
+
+        watchlistBtn.setOnMouseClicked(mouseEvent -> {
+            try {
+                addToWatchlist.onClick(getItem());
+
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private VBox getDetails() {
+        VBox details = new VBox();
         Label releaseYear = new Label("Release Year: " + getItem().getReleaseYear());
         Label length = new Label("Length: " + getItem().getLengthInMinutes() + " minutes");
         Label rating = new Label("Rating: " + getItem().getRating() + "/10");
+
+
         Label directors = new Label("Directors: " + String.join(", ", getItem().getDirectors()));
         Label writers = new Label("Writers: " + String.join(", ", getItem().getWriters()));
         Label mainCast = new Label("Main Cast: " + String.join(", ", getItem().getMainCast()));
@@ -97,21 +93,41 @@ public class MovieCell extends ListCell<Movie> {
         writers.getStyleClass().add("text-white");
         mainCast.getStyleClass().add("text-white");
 
-        return new VBox(releaseYear, length, rating, directors, writers, mainCast);
+        details.getChildren().add(releaseYear);
+        details.getChildren().add(rating);
+        details.getChildren().add(length);
+        details.getChildren().add(directors);
+        details.getChildren().add(writers);
+        details.getChildren().add(mainCast);
+        return details;
     }
-
     @Override
     protected void updateItem(Movie movie, boolean empty) {
         super.updateItem(movie, empty);
-        setText(null);  // Important for custom cell appearance
 
         if (empty || movie == null) {
             setGraphic(null);
+            setText(null);
         } else {
+            this.getStyleClass().add("movie-cell");
             title.setText(movie.getTitle());
-            detail.setText(movie.getDescription() != null ? movie.getDescription() : "No description available");
-            genre.setText(movie.getGenres().stream().map(Enum::toString).collect(Collectors.joining(", ")));
+            detail.setText(
+                    movie.getDescription() != null
+                            ? movie.getDescription()
+                            : "No description available"
+            );
+
+            String genres = movie.getGenres()
+                    .stream()
+                    .map(Enum::toString)
+                    .collect(Collectors.joining(", "));
+            genre.setText(genres);
+
+            //detail.setMaxWidth(this.getScene().getWidth() - 30);
+            detail.setMaxWidth(860);
+
             setGraphic(layout);
         }
     }
 }
+
