@@ -71,6 +71,17 @@ public class HomeController implements Initializable {
         WATCHLIST
     }
 
+    private void showMovieAPIError(MovieAPIException e) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
+        stage.setAlwaysOnTop(true);
+        alert.setTitle("Connection Error");
+        alert.setHeaderText(null);
+        alert.setContentText("Ooops, could not load movies!!!" + System.lineSeparator()
+                + System.lineSeparator() + "Loading Movies from last Time . . ." + System.lineSeparator()
+                + System.lineSeparator() + "Error: " + e.getCause());
+        alert.show();
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
